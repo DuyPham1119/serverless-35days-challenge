@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  HelloWorld lambda function
+  
+Parameters:
+  Stage:
+    Type: String
+    Default: test
+
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+
+    
+    LoggingConfig:
+      LogFormat: JSON
+Resources:
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+      - arm64
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /helloworld
+            Method: get
+          
+      Policies:
+        - Version: "2012-10-17"
+          Statement: 
+            - Effect: "Allow"
+              Action: 
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+              Resource:
+                !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/HelloWorld:*"
+                
+        - Version: "2012-10-17"
+          Statement: 
+            - Effect: "Allow"
+              Action: 
+                - "logs:CreateLogGroup"
+              Resource:
+                !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  # HelloWorldApi:
+  #   Description: API Gateway endpoint URL for Prod stage for Hello World function
+  #   Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/helloworld/"
+  HelloWorldFunction:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt HelloWorldFunction.Arn
