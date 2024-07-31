@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  mini-project
+
+  Sample SAM Template for mini-project
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Parameters:
+  Bucket:
+    Type: String
+    Default: pdduyhome-admin-terraform-remotebackend
+  ProductTable:
+    Type: String
+    Default: drugs
+
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+
+    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
+    LoggingConfig:
+      LogFormat: JSON
+Resources:
+  ImageUploadFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: image_upload/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+      - arm64
+
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /image_upload
+            Method: post
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref Bucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProductTable
+      
+  CreateProductFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: create_product/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+      - arm64
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /create_product
+            Method: post
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProductTable
+        
+  UpdateProductFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: update_product/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+      - arm64
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /update_product
+            Method: put
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProductTable
+          
+  GetProductFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: get_product/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+      - arm64
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /get_product
+            Method: get
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProductTable
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  ImageUploadApi:
+    Description: API Gateway endpoint URL for Prod stage for  function
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/image_upload/"
+  ImageUploadFunction:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt ImageUploadFunction.Arn
+  CreateProductApi:
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/create_product/"
+  CreateProductFunction:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt CreateProductFunction.Arn
+  UpdateProductApi:
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/update_product/"
+  UpdateProductFunction:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt UpdateProductFunction.Arn
+  GetProductApi:
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/gat_product/"
+  GetProductFunction:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt GetProductFunction.Arn
